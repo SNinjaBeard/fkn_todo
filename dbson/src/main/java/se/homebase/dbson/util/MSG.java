@@ -14,10 +14,8 @@ public final class MSG {
 
     private MSG() {}
 
-    public static JsonObject make(String type, String message) {
+    public static String make(String type, String message) {
         logger.info("make()");
-        JsonObject msg = new JsonObject();
-        msg.addProperty(type, message);
-        return msg;
+        return "{\"" + type + "\":\"" + message + "\"}";
     }
 }

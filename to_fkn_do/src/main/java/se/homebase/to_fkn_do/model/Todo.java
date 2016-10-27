@@ -1,14 +1,12 @@
 package se.homebase.to_fkn_do.model;
 
-import se.homebase.to_fkn_do.util.Validable;
-
 import java.util.UUID;
 
 /**
  * Created by superspaceninja on 2016-10-22.
  * todoitem
  */
-public class Todo implements Validable {
+public class Todo {
 
     private UUID id;
     private String name;
@@ -22,10 +20,6 @@ public class Todo implements Validable {
         this.name = name;
         this.desc = desc;
         this.done = done;
-    }
-
-    public boolean isValid() {
-        return id != null && name != null && !name.equals("");
     }
 
     public Todo setId(UUID id) {

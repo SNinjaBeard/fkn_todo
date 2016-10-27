@@ -64,27 +64,27 @@ public class testdbson {
         _jsonObject.addProperty("desc", "desc mod");
         _jsonObject.addProperty("done", done);
 
-        storage.put(id, jsonObject);
-        storage.put(d_id, d_jsonObject);
+        storage.put(id, jsonObject.toString());
+        storage.put(d_id, d_jsonObject.toString());
     }
 
     @Test
     public void test_db_put() {
-        JsonObject json = storage.put(_id, jsonObject).getAsJsonObject();
+        String json = storage.put(_id, jsonObject.toString());
         assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
         assertNotEquals(json, MSG.make("ERROR", "Invalid json"));
     }
 
     @Test
     public void test_db_update() {
-        JsonObject json = storage.update(id, _jsonObject).getAsJsonObject();
+        String json = storage.update(id, _jsonObject.toString());
         assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
         assertNotEquals(json, MSG.make("ERROR", "Invalid json"));
     }
 
     @Test
     public void test_db_get() {
-        JsonObject json = storage.get(id).getAsJsonObject();
+        String json = storage.get(id);
         assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
         assertNotEquals(json, MSG.make("ERROR", "Invalid json"));
         assertNotEquals(json, MSG.make("ERROR", "No value mapped to provided key"));
@@ -92,13 +92,13 @@ public class testdbson {
 
     @Test
     public void test_db_delete() {
-        JsonObject json = storage.remove(d_id).getAsJsonObject();
+        String json = storage.remove(d_id);
         assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
     }
 
     @Test
     public void test_db_get_all() {
-        JsonArray json = storage.get().getAsJsonArray();
+        String json = storage.get();
         assertNotNull(json);
     }
 }

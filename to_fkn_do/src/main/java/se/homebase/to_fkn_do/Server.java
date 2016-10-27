@@ -1,9 +1,10 @@
 package se.homebase.to_fkn_do;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.homebase.dbson.Storage;
@@ -23,6 +24,7 @@ public class Server {
 
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     private static final Gson gson = new GsonBuilder().registerTypeAdapter(Todo.class, new TodoAdapter()).create();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private static final String APPLICATION_JSON = "application/json";
     private static final int HTTP_BAD_REQUEST = 400;
@@ -66,15 +68,17 @@ public class Server {
             logger.info("/add");
             response.type(APPLICATION_JSON);
 
-            if (request.body() == null || request.body().equals("")) {
+            String body = StringUtils.trimToNull(request.body());
+
+            if (body == null) {
                 response.status(HTTP_BAD_REQUEST);
                 return MSG.make("ERROR", "Empty body");
             }
 
             Todo todo = gson.fromJson(new JsonParser().parse(request.body()), Todo.class);
-            JsonObject responseData = storage.put(todo.getId(), gson.toJsonTree(todo, Todo.class)).getAsJsonObject();
+            String responseData = storage.put(todo.getId(), mapper.writeValueAsString(todo));
 
-            response.status(responseData.has("ERROR") ? HTTP_BAD_REQUEST : HTTP_CREATED);
+            response.status(responseData.contains("ERROR") ? HTTP_BAD_REQUEST : HTTP_CREATED);
 
             return responseData;
         }));
@@ -89,15 +93,17 @@ public class Server {
                 return MSG.make("ERROR", "Invalid id");
             }
 
-            if (request.body() == null || request.body().equals("")) {
+            String body = StringUtils.trimToNull(request.body());
+
+            if (body == null) {
                 response.status(HTTP_BAD_REQUEST);
                 return MSG.make("ERROR", "Empty body");
             }
 
-            Todo todo = gson.fromJson(new JsonParser().parse(request.body()), Todo.class);
-            JsonObject responseData = storage.update(todo.getId(), gson.toJsonTree(todo, Todo.class)).getAsJsonObject();
+            Todo todo = mapper.readValue(body, Todo.class);
+            String responseData = storage.update(todo.getId(), mapper.writeValueAsString(todo));
 
-            response.status(responseData.has("ERROR") ? HTTP_BAD_REQUEST : HTTP_OK);
+            response.status(responseData.contains("ERROR") ? HTTP_BAD_REQUEST : HTTP_OK);
 
             return responseData;
         }));
@@ -112,9 +118,9 @@ public class Server {
                 return MSG.make("ERROR", "Invalid id");
             }
 
-            JsonObject responseData = storage.remove(UUID.fromString(request.params(":id"))).getAsJsonObject();
+            String responseData = storage.remove(UUID.fromString(request.params(":id")));
 
-            response.status(responseData.has("ERROR") ? HTTP_BAD_REQUEST : HTTP_OK);
+            response.status(responseData.contains("ERROR") ? HTTP_BAD_REQUEST : HTTP_OK);
 
             return responseData;
         }));

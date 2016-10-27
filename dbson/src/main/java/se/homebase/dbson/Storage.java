@@ -1,7 +1,6 @@
 package se.homebase.dbson;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.*;
+import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -10,22 +9,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.homebase.dbson.util.MSG;
 
-import java.lang.reflect.Type;
 import java.util.UUID;
 
 /**
  * Created by superspaceninja on 2016-10-21.
- * json storage
+ * String storage
  */
 public final class Storage {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Storage.class);
-    private static final JsonParser parser = new JsonParser();
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     private DB dbson_memo;
     private HTreeMap<UUID, String> dbson_memo_map;
     private HTreeMap<UUID, String> dbson_memo_history_map;
+    private HTreeMap<UUID, byte[]> dbson_memo_stream;
 
     public Storage() {
         dbson_memo = DBMaker.memoryDB().make();
@@ -40,23 +37,25 @@ public final class Storage {
      *
      * @return all values from map
      */
-    public JsonElement get() {
-        LOGGER.info( "get()");
+    public String get() {
+        LOGGER.info("get()");
 
         if (isEmpty()) {
             return MSG.make("ERROR", "No entities in db");
         }
 
-        JsonArray jsonEntities = new JsonArray();
+        StringBuilder result = new StringBuilder();
 
         dbson_memo_map.getValues().forEach(je -> {
-            jsonEntities.add(parser.parse(je));
+            result.append(je).append(",");
             LOGGER.info("fetched: {}", je);
         });
 
-        LOGGER.info("entities: {} {}", jsonEntities.size(), jsonEntities.toString());
+        result.insert(0, "[").replace(result.length() - 1, result.length(), "]");
 
-        return jsonEntities;
+        LOGGER.info("entities: {} {}", mapSize(), result.toString());
+
+        return result.toString();
     }
 
     /**
@@ -65,32 +64,32 @@ public final class Storage {
      * @param id map key
      * @return map value corresponding to provided key
      */
-    public JsonElement get(UUID id) {
+    public String get(UUID id) {
         LOGGER.info("get()");
 
         if (id == null || !dbson_memo_map.containsKey(id)) {
             return MSG.make("ERROR", "Invalid id");
         }
 
-        String storedString = dbson_memo_map.get(id);
+        String result = StringUtils.trimToNull(dbson_memo_map.get(id));
 
-        if (storedString == null || storedString.equals("")) {
+        if (result == null) {
             return MSG.make("ERROR", "No value mapped to provided key");
         }
 
-        LOGGER.info("stored string: {}", storedString);
+        LOGGER.info("stored string: {}", result);
 
-        return parser.parse(storedString);
+        return result;
     }
 
     /**
-     * put jsonEntity in map
+     * put data in map
      *
      * @param id         map key
-     * @param jsonEntity map value
+     * @param data map data
      * @return true if successfully put, else false
      */
-    public JsonElement put(UUID id, JsonElement jsonEntity) {
+    public String put(UUID id, String data) {
         LOGGER.info("put()");
 
         if (id == null) {
@@ -98,39 +97,43 @@ public final class Storage {
             return MSG.make("ERROR", "Invalid id");
         }
 
-        if (jsonEntity == null || jsonEntity.isJsonNull()) {
-            LOGGER.error("invalid json!");
-            return MSG.make("ERROR", "Invalid json");
+        data = StringUtils.trimToNull(data);
+
+        if (data == null) {
+            LOGGER.error("invalid data!");
+            return MSG.make("ERROR", "Invalid data");
         }
 
-        dbson_memo_map.put(id, jsonEntity.toString());
-        LOGGER.info("stored: {} {}", id.toString(), jsonEntity);
+        dbson_memo_map.put(id, data);
+        LOGGER.info("stored: {} {}", id.toString(), data);
 
-        return jsonEntity;
+        return data;
     }
 
     /**
      * replaces value at key position
      *
      * @param id         map key
-     * @param jsonUpdate updated map value
+     * @param dataUpdate updated map value
      * @return updated json element
      */
-    public JsonElement update(UUID id, JsonElement jsonUpdate) {
+    public String update(UUID id, String dataUpdate) {
         LOGGER.info("update()");
 
         if (id == null || !dbson_memo_map.containsKey(id)) {
             return MSG.make("ERROR", "Invalid id");
         }
 
-        if (jsonUpdate == null || jsonUpdate.isJsonNull()) {
-            return MSG.make("ERROR", "Invalid json");
+        dataUpdate = StringUtils.trimToNull(dataUpdate);
+
+        if (dataUpdate == null) {
+            return MSG.make("ERROR", "Invalid data");
         }
 
-        dbson_memo_map.replace(id, jsonUpdate.toString());
-        LOGGER.info("updated: {} {}", id.toString(), jsonUpdate);
+        dbson_memo_map.replace(id, dataUpdate);
+        LOGGER.info("updated: {} {}", id.toString(), dataUpdate);
 
-        return jsonUpdate;
+        return dataUpdate;
     }
 
     /**
@@ -139,20 +142,20 @@ public final class Storage {
      * @param id map key
      * @return removed json element
      */
-    public JsonElement remove(UUID id) {
+    public String remove(UUID id) {
         LOGGER.info("remove()");
 
         if (id == null || !dbson_memo_map.containsKey(id)) {
             return MSG.make("ERROR", "Invalid id");
         }
 
-        JsonElement jsonEntity = get(id);
+        String dataEntity = get(id);
 
-        dbson_memo_history_map.put(id, jsonEntity.toString());
+        dbson_memo_history_map.put(id, dataEntity);
         dbson_memo_map.remove(id);
-        LOGGER.info("history: {} {}", id.toString(), jsonEntity);
+        LOGGER.info("history: {} {}", id.toString(), dataEntity);
 
-        return jsonEntity;
+        return dataEntity;
     }
 
     //******************************************************
