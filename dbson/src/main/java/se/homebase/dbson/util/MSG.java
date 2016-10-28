@@ -1,6 +1,5 @@
 package se.homebase.dbson.util;
 
-import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +13,9 @@ public final class MSG {
 
     private MSG() {}
 
-    public static String make(String type, String message) {
+    public static byte[] make(String type, String message) {
         logger.info("make()");
-        return "{\"" + type + "\":\"" + message + "\"}";
+        String msg = "{\"" + type + "\":\"" + message + "\"}";
+        return msg.getBytes();
     }
 }

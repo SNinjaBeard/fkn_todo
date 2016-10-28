@@ -1,6 +1,5 @@
 package se.homebase.dbson;
 
-import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -20,16 +19,15 @@ public final class Storage {
     private static final Logger LOGGER = LoggerFactory.getLogger(Storage.class);
 
     private DB dbson_memo;
-    private HTreeMap<UUID, String> dbson_memo_map;
-    private HTreeMap<UUID, String> dbson_memo_history_map;
-    private HTreeMap<UUID, byte[]> dbson_memo_stream;
+    private HTreeMap<UUID, byte[]> dbson_memo_map;
+    private HTreeMap<UUID, byte[]> dbson_memo_history_map;
 
     public Storage() {
         dbson_memo = DBMaker.memoryDB().make();
         dbson_memo_map = dbson_memo
-                .hashMap("todo_memo", Serializer.UUID, Serializer.STRING).createOrOpen();
+                .hashMap("todo_memo", Serializer.UUID, Serializer.BYTE_ARRAY).createOrOpen();
         dbson_memo_history_map = dbson_memo
-                .hashMap("todo_history_memo", Serializer.UUID, Serializer.STRING).createOrOpen();
+                .hashMap("todo_history_memo", Serializer.UUID, Serializer.BYTE_ARRAY).createOrOpen();
     }
 
     /**
@@ -37,7 +35,7 @@ public final class Storage {
      *
      * @return all values from map
      */
-    public String get() {
+    public byte[] get() {
         LOGGER.info("get()");
 
         if (isEmpty()) {
@@ -55,7 +53,7 @@ public final class Storage {
 
         LOGGER.info("entities: {} {}", mapSize(), result.toString());
 
-        return result.toString();
+        return result.toString().getBytes();
     }
 
     /**
@@ -64,14 +62,14 @@ public final class Storage {
      * @param id map key
      * @return map value corresponding to provided key
      */
-    public String get(UUID id) {
+    public byte[] get(UUID id) {
         LOGGER.info("get()");
 
         if (id == null || !dbson_memo_map.containsKey(id)) {
             return MSG.make("ERROR", "Invalid id");
         }
 
-        String result = StringUtils.trimToNull(dbson_memo_map.get(id));
+        byte[] result = dbson_memo_map.get(id);
 
         if (result == null) {
             return MSG.make("ERROR", "No value mapped to provided key");
@@ -89,15 +87,13 @@ public final class Storage {
      * @param data map data
      * @return true if successfully put, else false
      */
-    public String put(UUID id, String data) {
+    public byte[] put(UUID id, byte[] data) {
         LOGGER.info("put()");
 
         if (id == null) {
             LOGGER.error("invalid id!");
             return MSG.make("ERROR", "Invalid id");
         }
-
-        data = StringUtils.trimToNull(data);
 
         if (data == null) {
             LOGGER.error("invalid data!");
@@ -117,14 +113,12 @@ public final class Storage {
      * @param dataUpdate updated map value
      * @return updated json element
      */
-    public String update(UUID id, String dataUpdate) {
+    public byte[] update(UUID id, byte[] dataUpdate) {
         LOGGER.info("update()");
 
         if (id == null || !dbson_memo_map.containsKey(id)) {
             return MSG.make("ERROR", "Invalid id");
         }
-
-        dataUpdate = StringUtils.trimToNull(dataUpdate);
 
         if (dataUpdate == null) {
             return MSG.make("ERROR", "Invalid data");
@@ -142,14 +136,14 @@ public final class Storage {
      * @param id map key
      * @return removed json element
      */
-    public String remove(UUID id) {
+    public byte[] remove(UUID id) {
         LOGGER.info("remove()");
 
         if (id == null || !dbson_memo_map.containsKey(id)) {
             return MSG.make("ERROR", "Invalid id");
         }
 
-        String dataEntity = get(id);
+        byte[] dataEntity = get(id);
 
         dbson_memo_history_map.put(id, dataEntity);
         dbson_memo_map.remove(id);
