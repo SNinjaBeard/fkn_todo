@@ -1,12 +1,12 @@
 package se.homebase.dbson.test;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.homebase.dbson.Storage;
-import se.homebase.dbson.util.MSG;
+import se.homebase.dbson.DBSon;
+import se.homebase.dbson.util.DBSonUtil;
 
 import java.util.UUID;
 
@@ -15,90 +15,71 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * Created by superspaceninja on 2016-10-21.
- * json storage
+ * json dBSon
  */
 public class testdbson {
 
-    private static final Logger logger = LoggerFactory.getLogger(testdbson.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(testdbson.class);
 
-    Storage storage;
+    private static final DBSon dBSon = new DBSon("test", "/home/superspaceninja/workspace/fkn_todo/dbson/database/dbson.db");
 
-    JsonObject jsonObject = null;
-    JsonObject _jsonObject = null;
-    JsonObject d_jsonObject = null;
-    UUID id = null;
-    UUID _id = null;
-    UUID d_id = null;
-    String name = null;
-    String desc = null;
+    UUID id_1 = UUID.randomUUID();
+    UUID id_2 = UUID.randomUUID();
+    UUID id_3 = UUID.randomUUID();
+    byte[] data_1 = null;
+    byte[] data_2 = null;
+    byte[] data_3 = null;
+    String name = "mock todo";
+    String desc = "ipsum lorum";
     boolean done;
+    boolean firstRun = false;
+
+    private static final String INVALID_ID = new String(DBSonUtil.makeMsg("ERROR", "Invalid id"));
+    private static final String INVALID_DATA = new String(DBSonUtil.makeMsg("ERROR", "Invalid data"));
+    private static final String NO_VALUE_MAPPED_TO_PROVIDED_KEY = new String(DBSonUtil.makeMsg("ERROR", "No value mapped to provided key"));
+
+    public byte[] make(UUID id) {
+        JsonObject jo = new JsonObject();
+        jo.addProperty("id", id.toString());
+        jo.addProperty("name", name);
+        jo.addProperty("desc", desc);
+        jo.addProperty("done", done);
+        return jo.toString().getBytes();
+    }
 
     @Before
     public void setup() {
-        logger.debug("setup()");
-
-        storage = new Storage();
-
-        id = UUID.randomUUID();
-        _id = UUID.randomUUID();
-        d_id = UUID.randomUUID();
-        name = "todo";
-        desc = "stuff to do goes here.";
-        done = false;
-
-        jsonObject = new JsonObject();
-        jsonObject.addProperty("id", id.toString());
-        jsonObject.addProperty("name", name);
-        jsonObject.addProperty("desc", desc);
-        jsonObject.addProperty("done", done);
-
-        d_jsonObject = new JsonObject();
-        jsonObject.addProperty("id", d_id.toString());
-        jsonObject.addProperty("name", name);
-        jsonObject.addProperty("desc", desc);
-        jsonObject.addProperty("done", done);
-
-        _jsonObject = new JsonObject();
-        _jsonObject.addProperty("id", id.toString());
-        _jsonObject.addProperty("name", "name mod");
-        _jsonObject.addProperty("desc", "desc mod");
-        _jsonObject.addProperty("done", done);
-
-        storage.put(id, jsonObject.toString());
-        storage.put(d_id, d_jsonObject.toString());
+        if (firstRun) {
+            data_1 = make(id_1);
+            data_2 = make(id_2);
+            data_3 = make(id_3);
+            LOGGER.info("dBSon empty, saving: {}", new String(data_1));
+            data_1 = dBSon.put(id_1, data_1);
+            firstRun = false;
+        }
     }
 
     @Test
-    public void test_db_put() {
-        String json = storage.put(_id, jsonObject.toString());
-        assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
-        assertNotEquals(json, MSG.make("ERROR", "Invalid json"));
+    public void get() {
+        byte[] data = dBSon.get(id_1);
+        assertNotEquals(data, INVALID_ID);
+        assertNotEquals(data, INVALID_DATA);
+        assertNotEquals(data, NO_VALUE_MAPPED_TO_PROVIDED_KEY);
+        LOGGER.info("TEST ::: get ::: result: {}", new String(data));
     }
 
     @Test
-    public void test_db_update() {
-        String json = storage.update(id, _jsonObject.toString());
-        assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
-        assertNotEquals(json, MSG.make("ERROR", "Invalid json"));
+    public void put() {
+        byte[] data = dBSon.put(id_2, data_2);
+        assertNotEquals(data, INVALID_ID);
+        assertNotEquals(data, INVALID_DATA);
+        LOGGER.info("TEST ::: put ::: result: {}", new String(data));
     }
 
     @Test
-    public void test_db_get() {
-        String json = storage.get(id);
-        assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
-        assertNotEquals(json, MSG.make("ERROR", "Invalid json"));
-        assertNotEquals(json, MSG.make("ERROR", "No value mapped to provided key"));
-    }
-
-    @Test
-    public void test_db_delete() {
-        String json = storage.remove(d_id);
-        assertNotEquals(json, MSG.make("ERROR", "Invalid id"));
-    }
-
-    @Test
-    public void test_db_get_all() {
-        String json = storage.get();
-        assertNotNull(json);
+    public void getAll() {
+        byte[] data = dBSon.get();
+        assertNotNull(data);
+        LOGGER.info("TEST ::: getAll ::: result: {}", new String(data));
     }
 }
