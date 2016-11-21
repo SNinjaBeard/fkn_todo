@@ -20,7 +20,7 @@ public final class DBSon {
 
     private static String NAME;
 
-    private DB dbson_file;
+    private DB dbson;
     private HTreeMap<UUID, byte[]> dbson_map;
     private HTreeMap<UUID, byte[]> dbson_history_map;
 
@@ -35,12 +35,12 @@ public final class DBSon {
 
         this.NAME = NAME;
 
-        dbson_file = DBMaker.fileDB(DB_DIR)
+        dbson = DBMaker.fileDB(DB_DIR)
                 .closeOnJvmShutdown()
                 .make();
 
-        dbson_map = DBSonUtil.makeFileMap(dbson_file, NAME, false);
-        dbson_history_map = DBSonUtil.makeFileMap(dbson_file, NAME, true);
+        dbson_map = DBSonUtil.makeFileMap(dbson, NAME, false);
+        dbson_history_map = DBSonUtil.makeFileMap(dbson, NAME, true);
 
         LOGGER.info("new DBson(NAME: {}, DB_DIR: {})", NAME, DB_DIR);
     }
